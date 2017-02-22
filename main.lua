@@ -1,12 +1,15 @@
-level = {}
 padding = 18
+level = {
+	gridSize = 15
+}
 
-dirMap = {
+direction = {
 	up = 0,
 	down = 1,
 	right = 2,
 	left = 3
 }
+
 
 function love.load()
 	love.graphics.setBackgroundColor(255, 255, 255)
@@ -25,10 +28,11 @@ function love.load()
 	player = {
 		x = width / 2,
 		y = height / 2,
-		img = love.graphics.newImage('purple.png'),
+		w = level.gridSize - 2,
+		h = level.gridSize - 2, 
 		speed = 100,
 		color = { 255, 255, 255 },
-		direction = dirMap.up,
+		direction = direction.up,
 		score = 0, 
 	}
 
@@ -52,14 +56,13 @@ function love.draw()
 
 	-- player
 	love.graphics.setColor(player.color)
-	love.graphics.draw(player.img, player.x, player.y, 0, 1, 1, 0, 0)
+	love.graphics.rectangle('fill', player.x, player.y, player.w, player.h)
 
 	-- score screen
 	love.graphics.print("Score: " .. player.score, padding+10, padding+10)
 
 	-- debug prints
 	love.graphics.print("player x: " .. player.x, padding*10, padding+10)
-	love.graphics.print("player width: " .. player.img:getWidth(), padding*10, padding+25)
 	love.graphics.print("level width: " .. level.width, padding*10, padding+40)
 	love.graphics.print("FPS: " .. love.timer.getFPS(), 2, 2)
 end
@@ -72,37 +75,60 @@ function love.update(dt)
 	-- In the case of snake we should be always moving in a direction and will change statefully with a key
 	if love.keyboard.isDown('right') then
 		-- This makes sure that the character doesn't go pass the game window's right edge.
-		if player.direction ~= dirMap.left then 
-			player.direction = dirMap.right
+		if player.direction ~= direction.left then 
+			player.direction = direction.right
 		end
 	elseif love.keyboard.isDown('left') then
 		-- This makes sure that the character doesn't go pass the game window's left edge.
-		if player.direction ~= dirMap.right then 
-			player.direction = dirMap.left
+		if player.direction ~= direction.right then 
+			player.direction = direction.left
 		end
 	elseif love.keyboard.isDown('up') then
-		if player.direction ~= dirMap.down then
-			player.direction = dirMap.up
+		if player.direction ~= direction.down then
+			player.direction = direction.up
 		end
 	elseif love.keyboard.isDown('down') then
-		if player.direction ~= dirMap.up then
-			player.direction = dirMap.down
+		if player.direction ~= direction.up then
+			player.direction = direction.down
 		end
 	end
 
-	if player.direction == dirMap.up then
+	if player.direction == direction.up then
 		player.y = math.clamp(player.y - (player.speed * dt), level.y, level.height)
-	elseif player.direction == dirMap.down then 
-	    player.y = math.clamp(player.y + (player.speed * dt), level.y, level.height - player.img:getWidth() + padding)
-	elseif player.direction == dirMap.right then 
-		player.x = math.clamp(player.x + (player.speed * dt), level.x, level.width - player.img:getWidth() + padding)
-	elseif player.direction == dirMap.left then
+	elseif player.direction == direction.down then 
+	    player.y = math.clamp(player.y + (player.speed * dt), level.y, level.height - player.w + padding)
+	elseif player.direction == direction.right then 
+		player.x = math.clamp(player.x + (player.speed * dt), level.x, level.width - player.w + padding)
+	elseif player.direction == direction.left then
 	    player.x = math.clamp(player.x - (player.speed * dt), level.x, level.width)
 	end
 
-	
+	if CheckCollision(player, treat) then
+		player.score = player.score + 1
+		treat.x, treat.y = randPos()
+	end
 end
 
 function math.clamp(x, min, max)
   return x < min and min or (x > max and max or x)
+end
+
+function CheckCollision(box1, box2)
+    if box1.x > box2.x + box2.w - 1 or -- Is box1 on the right side of box2?
+       box1.y > box2.y + box2.h - 1 or -- Is box1 under box2?
+       box2.x > box1.x + box1.w - 1 or -- Is box2 on the right side of box1?
+       box2.y > box1.y + box1.h - 1    -- Is b2 under b1?
+    then
+        return false
+    else
+        return true
+    end
+end
+
+function randPos()
+	local x,y
+	x = math.random(1, level.width)
+	y = math.random(1, level.height)
+	print("Random x"..x.." y"..y)
+	return x,y
 end
