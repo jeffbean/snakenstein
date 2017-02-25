@@ -18,8 +18,12 @@ function love.load()
   	height = love.graphics.getHeight()
 
 	love.physics.setMeter(64) --the height of a meter our worlds will be 64px
-  	world = love.physics.newWorld(0, 9.81*64, true) --create a world for the bodies to exist in with horizontal gravity of 0 and vertical gravity of 0
+  	world = love.physics.newWorld(0, 0, true) --create a world for the bodies to exist in with horizontal gravity of 0 and vertical gravity of 0
+	    --These callback function names can be almost any you want:
+        world:setCallbacks(beginContact, endContact, preSolve, postSolve)
 	
+    persisting = 0    
+
 	objects = {} -- table to hold all our physical objects
  
 	--let's create the ground
@@ -31,28 +35,29 @@ function love.load()
 	objects.walls.top = love.physics.newRectangleShape(0, 0, width*2, 15) 
 	objects.walls.right = love.physics.newRectangleShape(width, 0, 15, height*2) 
 	objects.walls.bottom = love.physics.newRectangleShape(0, height, width*2, 15) 
+
+	objects.walls.leftFixture = love.physics.newFixture(objects.walls.body, objects.walls.left) 
+	objects.walls.leftFixture:setUserData("LeftWall")
 	
-	love.physics.newFixture(objects.walls.body, objects.walls.left) 
-	love.physics.newFixture(objects.walls.body, objects.walls.right)
-	love.physics.newFixture(objects.walls.body, objects.walls.top)
-	love.physics.newFixture(objects.walls.body, objects.walls.bottom) 
+	objects.walls.rightFixture = love.physics.newFixture(objects.walls.body, objects.walls.right)
+	objects.walls.rightFixture:setUserData("RightWall")
+
+	objects.walls.topFixture = love.physics.newFixture(objects.walls.body, objects.walls.top)
+	objects.walls.topFixture:setUserData("TopWall")
+	
+	objects.walls.bottomFixture = love.physics.newFixture(objects.walls.body, objects.walls.bottom) 
+	objects.walls.bottomFixture:setUserData("BottomWall")
 
 	--let's create a player
 	objects.player = {}
+	objects.player.score = 0
 	objects.player.body = love.physics.newBody(world, width/2, height/2, "dynamic") --place the body in the center of the world and make it dynamic, so it can move around
 	
 	objects.player.shape = love.physics.newCircleShape(20)
 	objects.player.fixture = love.physics.newFixture(objects.player.body, objects.player.shape, 1) -- Attach fixture to body and give it a density of 1.
-	objects.player.fixture:setRestitution(0.9) --let the player bounce
-
-	objects.player.body2 = love.physics.newBody(world, width/2, height/2, "dynamic") --place the body in the center of the world and make it dynamic, so it can move around
-	
-	objects.player.shape2 = love.physics.newCircleShape(15)
-	objects.player.fixture2 = love.physics.newFixture(objects.player.body2, objects.player.shape2, 1) -- Attach fixture to body and give it a density of 1.
-	objects.player.fixture2:setRestitution(0.9) --let the player bounce
-
-
-	joint = love.physics.newRevoluteJoint( objects.player.body, objects.player.body2, 0, 0, 10, 10, true, 5 )
+	objects.player.fixture:setUserData("Player")
+	objects.player.fixture:setRestitution(0.1) --let the player bounce
+	objects.player.fixture:setFriction(0.9)
 
 	-- This is the coordinates where the level will be rendered.
 	treat = {
@@ -61,6 +66,13 @@ function love.load()
 		w = 15,
 		h = 15,
 	}
+	-- treats 
+	objects.treat = {}
+	objects.treat.body = love.physics.newBody(world, treat.x, treat.y, "static") 
+
+	objects.treat.shape = love.physics.newRectangleShape(treat.w, treat.h)
+	objects.treat.fixture = love.physics.newFixture(objects.treat.body, objects.treat.shape, 1)
+	objects.treat.fixture:setUserData("Treat")
 end
 
 -- Hello comment
@@ -80,58 +92,78 @@ function love.draw()
 	-- for _, shape in ipairs(objects.player.shapes) do 
   		love.graphics.circle("fill", objects.player.body:getX(), objects.player.body:getY(), objects.player.shape:getRadius())
 	-- end
-	love.graphics.setColor(163, 27, 10) 
-	love.graphics.circle("fill", objects.player.body2:getX(), objects.player.body2:getY(), objects.player.shape2:getRadius())
-
 
 	-- treat 
 	love.graphics.setColor(110, 110, 110) 
-	love.graphics.rectangle('fill', treat.x, treat.y, treat.w, treat.h)
+	love.graphics.polygon('fill', objects.treat.body:getWorldPoints(objects.treat.shape:getPoints()))
 
 	-- debug prints
-	love.graphics.print("FPS: " .. love.timer.getFPS(), 2, 2)
+	love.graphics.print("Score: " .. objects.player.score, 15, 20)
+	love.graphics.print("FPS: " .. love.timer.getFPS(), 15, 2)
 end
 
 function love.focus(f) gameIsPaused = not f end
  
 function love.update(dt)
 	if gameIsPaused then return end
-	
+	if objects.treat.isFlagged then
+		x, y = randPos()
+		objects.treat.body:setPosition(x, y)
+		objects.treat.isFlagged = false
+	end
 	world:update(dt)
 
+	
+
 	if love.keyboard.isDown('right') then
-		objects.player.body:applyForce(400, 0)
-	elseif love.keyboard.isDown('left') then
-	    objects.player.body:applyForce(-400, 0)
-	elseif love.keyboard.isDown('up') then
-		objects.player.body:applyForce(0, -400)
-	elseif love.keyboard.isDown('down') then
+		objects.player.body:applyForce(200, 0)
+	end
+	if love.keyboard.isDown('left') then
+	    objects.player.body:applyForce(-200, 0)
+	end
+	if love.keyboard.isDown('up') then
+		objects.player.body:applyForce(0, -200)
+	end
+	if love.keyboard.isDown('down') then
 		objects.player.body:applyForce(0, 200)
 	end
-
-	-- if CheckCollision(objects.player, treat) then
-	-- 	player.score = player.score + 1
-	-- 	treat.x, treat.y = randPos()
-	-- 	objects.player.shapes[score] = love.physics.newCircleShape(20)
-	-- end
 end
 
-function CheckCollision(box1, box2)
-    if box1.x > box2.x + box2.w - 1 or -- Is box1 on the right side of box2?
-       box1.y > box2.y + box2.h - 1 or -- Is box1 under box2?
-       box2.x > box1.x + box1.w - 1 or -- Is box2 on the right side of box1?
-       box2.y > box1.y + box1.h - 1    -- Is b2 under b1?
-    then
-        return false
-    else
-        return true
+function beginContact(a, b, coll)
+    x,y = coll:getNormal()
+	if a:getUserData() == "Treat"  or b:getUserData() == "Treat" then
+		objects.player.score = objects.player.score + 1
+		objects.treat.isFlagged = true
+	end
+	print(objects.player.score)
+    print(a:getUserData().." colliding with "..b:getUserData().." with a vector normal of: "..x..", "..y)
+end
+ 
+ 
+function endContact(a, b, coll)
+    persisting = 0    -- reset since they're no longer touching
+    print(a:getUserData().." uncolliding with "..b:getUserData())
+end
+ 
+function preSolve(a, b, coll)
+    if persisting == 0 then    -- only say when they first start touching
+        print(a:getUserData().." touching "..b:getUserData())
+    elseif persisting < 20 then    -- then just start counting
+        print(" "..persisting)
     end
+    persisting = persisting + 1    -- keep track of how many updates they've been touching for
 end
+ 
+function postSolve(a, b, coll, normalimpulse, tangentimpulse)
+-- we won't do anything with this function
+end
+
 
 function randPos()
 	local x,y
-	x = math.random(1, level.width)
-	y = math.random(1, level.height)
+	x = math.random(1, width)
+	y = math.random(1, height)
 	print("Random x"..x.." y"..y)
 	return x,y
 end
+
