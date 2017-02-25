@@ -1,4 +1,4 @@
-padding = 18
+padding = 15
 level = {
 	gridSize = 15
 }
@@ -12,30 +12,49 @@ direction = {
 
 
 function love.load()
-	love.graphics.setBackgroundColor(255, 255, 255)
+	love.graphics.setBackgroundColor(0, 0, 0)
 	
 	width = love.graphics.getWidth()
   	height = love.graphics.getHeight()
 
-	-- This is the height and the width of the level.
-	level.width = width - padding * 2    -- This makes the level as wide as the whole game window.
-	level.height = height - padding * 2 -- This makes the level as tall as the whole game window.
+	love.physics.setMeter(64) --the height of a meter our worlds will be 64px
+  	world = love.physics.newWorld(0, 9.81*64, true) --create a world for the bodies to exist in with horizontal gravity of 0 and vertical gravity of 0
+	
+	objects = {} -- table to hold all our physical objects
+ 
+	--let's create the ground
+	objects.walls = {}
+	objects.walls.body = love.physics.newBody(world, 0, 0) 
+	objects.walls.wall = {}
+	
+	objects.walls.left = love.physics.newRectangleShape(0, 0, 15, height*2) 
+	objects.walls.top = love.physics.newRectangleShape(0, 0, width*2, 15) 
+	objects.walls.right = love.physics.newRectangleShape(width, 0, 15, height*2) 
+	objects.walls.bottom = love.physics.newRectangleShape(0, height, width*2, 15) 
+	
+	love.physics.newFixture(objects.walls.body, objects.walls.left) 
+	love.physics.newFixture(objects.walls.body, objects.walls.right)
+	love.physics.newFixture(objects.walls.body, objects.walls.top)
+	love.physics.newFixture(objects.walls.body, objects.walls.bottom) 
+
+	--let's create a player
+	objects.player = {}
+	objects.player.body = love.physics.newBody(world, width/2, height/2, "dynamic") --place the body in the center of the world and make it dynamic, so it can move around
+	
+	objects.player.shape = love.physics.newCircleShape(20)
+	objects.player.fixture = love.physics.newFixture(objects.player.body, objects.player.shape, 1) -- Attach fixture to body and give it a density of 1.
+	objects.player.fixture:setRestitution(0.9) --let the player bounce
+
+	objects.player.body2 = love.physics.newBody(world, width/2, height/2, "dynamic") --place the body in the center of the world and make it dynamic, so it can move around
+	
+	objects.player.shape2 = love.physics.newCircleShape(15)
+	objects.player.fixture2 = love.physics.newFixture(objects.player.body2, objects.player.shape2, 1) -- Attach fixture to body and give it a density of 1.
+	objects.player.fixture2:setRestitution(0.9) --let the player bounce
+
+
+	joint = love.physics.newRevoluteJoint( objects.player.body, objects.player.body2, 0, 0, 10, 10, true, 5 )
 
 	-- This is the coordinates where the level will be rendered.
-	level.x = 0 + padding                               
-	level.y = 0 + padding     
-
-	player = {
-		x = width / 2,
-		y = height / 2,
-		w = level.gridSize - 2,
-		h = level.gridSize - 2, 
-		speed = 100,
-		color = { 255, 255, 255 },
-		direction = direction.up,
-		score = 0, 
-	}
-
 	treat = {
 		x = width / 3,
 		y = height / 3,
@@ -47,23 +66,29 @@ end
 -- Hello comment
 function love.draw()
 	-- level
-	love.graphics.setColor(0, 0, 0) 
-	love.graphics.rectangle('fill', level.x, level.y, level.width, level.height)
+	love.graphics.setColor(0, 0, 100) 
+  	love.graphics.polygon("fill", objects.walls.body:getWorldPoints(objects.walls.left:getPoints())) -- draw a "filled in" polygon using the ground's coordinates
+	love.graphics.setColor(0, 0, 255) 
+	love.graphics.polygon("fill", objects.walls.body:getWorldPoints(objects.walls.right:getPoints())) -- draw a "filled in" polygon using the ground's coordinates
+	love.graphics.setColor(0, 100, 100) 
+  	love.graphics.polygon("fill", objects.walls.body:getWorldPoints(objects.walls.top:getPoints())) -- draw a "filled in" polygon using the ground's coordinates
+	love.graphics.setColor(100, 0, 100) 
+  	love.graphics.polygon("fill", objects.walls.body:getWorldPoints(objects.walls.bottom:getPoints())) -- draw a "filled in" polygon using the ground's coordinates
+	
+	
+	love.graphics.setColor(193, 47, 14) --set the drawing color to red for the player
+	-- for _, shape in ipairs(objects.player.shapes) do 
+  		love.graphics.circle("fill", objects.player.body:getX(), objects.player.body:getY(), objects.player.shape:getRadius())
+	-- end
+	love.graphics.setColor(163, 27, 10) 
+	love.graphics.circle("fill", objects.player.body2:getX(), objects.player.body2:getY(), objects.player.shape2:getRadius())
+
 
 	-- treat 
 	love.graphics.setColor(110, 110, 110) 
 	love.graphics.rectangle('fill', treat.x, treat.y, treat.w, treat.h)
 
-	-- player
-	love.graphics.setColor(player.color)
-	love.graphics.rectangle('fill', player.x, player.y, player.w, player.h)
-
-	-- score screen
-	love.graphics.print("Score: " .. player.score, padding+10, padding+10)
-
 	-- debug prints
-	love.graphics.print("player x: " .. player.x, padding*10, padding+10)
-	love.graphics.print("level width: " .. level.width, padding*10, padding+40)
 	love.graphics.print("FPS: " .. love.timer.getFPS(), 2, 2)
 end
 
@@ -71,46 +96,24 @@ function love.focus(f) gameIsPaused = not f end
  
 function love.update(dt)
 	if gameIsPaused then return end
- 
-	-- In the case of snake we should be always moving in a direction and will change statefully with a key
+	
+	world:update(dt)
+
 	if love.keyboard.isDown('right') then
-		-- This makes sure that the character doesn't go pass the game window's right edge.
-		if player.direction ~= direction.left then 
-			player.direction = direction.right
-		end
+		objects.player.body:applyForce(400, 0)
 	elseif love.keyboard.isDown('left') then
-		-- This makes sure that the character doesn't go pass the game window's left edge.
-		if player.direction ~= direction.right then 
-			player.direction = direction.left
-		end
+	    objects.player.body:applyForce(-400, 0)
 	elseif love.keyboard.isDown('up') then
-		if player.direction ~= direction.down then
-			player.direction = direction.up
-		end
+		objects.player.body:applyForce(0, -400)
 	elseif love.keyboard.isDown('down') then
-		if player.direction ~= direction.up then
-			player.direction = direction.down
-		end
+		objects.player.body:applyForce(0, 200)
 	end
 
-	if player.direction == direction.up then
-		player.y = math.clamp(player.y - (player.speed * dt), level.y, level.height)
-	elseif player.direction == direction.down then 
-	    player.y = math.clamp(player.y + (player.speed * dt), level.y, level.height - player.w + padding)
-	elseif player.direction == direction.right then 
-		player.x = math.clamp(player.x + (player.speed * dt), level.x, level.width - player.w + padding)
-	elseif player.direction == direction.left then
-	    player.x = math.clamp(player.x - (player.speed * dt), level.x, level.width)
-	end
-
-	if CheckCollision(player, treat) then
-		player.score = player.score + 1
-		treat.x, treat.y = randPos()
-	end
-end
-
-function math.clamp(x, min, max)
-  return x < min and min or (x > max and max or x)
+	-- if CheckCollision(objects.player, treat) then
+	-- 	player.score = player.score + 1
+	-- 	treat.x, treat.y = randPos()
+	-- 	objects.player.shapes[score] = love.physics.newCircleShape(20)
+	-- end
 end
 
 function CheckCollision(box1, box2)
