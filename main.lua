@@ -19,8 +19,6 @@ function love.load()
 	
 	width = love.graphics.getWidth()
   	height = love.graphics.getHeight()
-	print("getHeight: " .. height)
-	print("getWidth: " .. width)
 
 	love.physics.setMeter(64) --the height of a meter our worlds will be 64px
   	world = love.physics.newWorld(0, 0, true) --create a world for the bodies to exist in with horizontal gravity of 0 and vertical gravity of 0
@@ -31,14 +29,14 @@ function love.load()
  
 	--let's create the ground
 	objects.entities = {}
-	wallPoints = {}
+	local wallPoints = {}
 
 	table.insert(wallPoints, {0, 0, 15, height*2})-- left
 	table.insert(wallPoints, {0, 0, width*2, 15}) -- top
 	table.insert(wallPoints, {width/2, 0, 15, height*2}) -- right
 	table.insert(wallPoints, {0, height/2, width*2, 15}) -- bottom
 
-	color = {0, 0, 255}
+	local color = {0, 0, 255}
 	for i,point in ipairs(wallPoints) do
 		table.insert(objects.entities, Wall(world, point, color))
 	end
