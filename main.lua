@@ -12,6 +12,7 @@ direction = {
 
 Wall = require "src.entities.wall"
 Player = require "src.entities.player"
+Treat = require "src.entities.treat"
 
 function love.load()
 	love.graphics.setBackgroundColor(0, 0, 0)
@@ -42,23 +43,10 @@ function love.load()
 		table.insert(objects.walls, Wall(world, point, color))
 	end
 
-	--let's create a player
+	-- let's create a player
 	objects.player = Player(world, width/2, height/2, {193, 47, 14})
-
-	-- This is the coordinates where the level will be rendered.
-	treat = {
-		x = width / 3,
-		y = height / 3,
-		w = 15,
-		h = 15,
-	}
-	-- treats 
-	objects.treat = {}
-	objects.treat.body = love.physics.newBody(world, treat.x, treat.y, "static") 
-
-	objects.treat.shape = love.physics.newRectangleShape(treat.w, treat.h)
-	objects.treat.fixture = love.physics.newFixture(objects.treat.body, objects.treat.shape, 1)
-	objects.treat.fixture:setUserData("Treat")
+	-- make a treat to start
+	objects.treat = Treat(world, width / 3,  height / 3, 15, 15, {110, 110, 110})
 end
 
 -- Hello comment
@@ -70,8 +58,7 @@ function love.draw()
 	-- player draw	
 	objects.player:draw()
 	-- treat 
-	love.graphics.setColor(110, 110, 110) 
-	love.graphics.polygon('fill', objects.treat.body:getWorldPoints(objects.treat.shape:getPoints()))
+	objects.treat:draw()
 
 	-- debug prints
 	love.graphics.print("Score: " .. objects.player.score, 15, 20)
