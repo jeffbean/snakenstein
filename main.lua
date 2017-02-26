@@ -11,6 +11,7 @@ direction = {
 }
 
 Wall = require "src.entities.wall"
+Player = require "src.entities.player"
 
 function love.load()
 	love.graphics.setBackgroundColor(0, 0, 0)
@@ -22,11 +23,9 @@ function love.load()
 
 	love.physics.setMeter(64) --the height of a meter our worlds will be 64px
   	world = love.physics.newWorld(0, 0, true) --create a world for the bodies to exist in with horizontal gravity of 0 and vertical gravity of 0
-	    --These callback function names can be almost any you want:
-        world:setCallbacks(beginContact, endContact, preSolve, postSolve)
+	--These callback function names can be almost any you want:
+	world:setCallbacks(beginContact, endContact, preSolve, postSolve)
 	
-    persisting = 0    
-
 	objects = {} -- table to hold all our physical objects
  
 	--let's create the ground
@@ -44,15 +43,7 @@ function love.load()
 	end
 
 	--let's create a player
-	objects.player = {}
-	objects.player.score = 0
-	objects.player.body = love.physics.newBody(world, width/2, height/2, "dynamic") --place the body in the center of the world and make it dynamic, so it can move around
-	
-	objects.player.shape = love.physics.newCircleShape(20)
-	objects.player.fixture = love.physics.newFixture(objects.player.body, objects.player.shape, 1) -- Attach fixture to body and give it a density of 1.
-	objects.player.fixture:setUserData("Player")
-	objects.player.fixture:setRestitution(0.1) --let the player bounce
-	objects.player.fixture:setFriction(0.9)
+	objects.player = Player(world, width/2, height/2, {193, 47, 14})
 
 	-- This is the coordinates where the level will be rendered.
 	treat = {
@@ -76,13 +67,8 @@ function love.draw()
 	for _,wall in ipairs(objects.walls) do
 		wall:draw()
 	end
-	 -- draw a "filled in" polygon using the ground's coordinates
-	
-	love.graphics.setColor(193, 47, 14) --set the drawing color to red for the player
-	-- for _, shape in ipairs(objects.player.shapes) do 
-  		love.graphics.circle("fill", objects.player.body:getX(), objects.player.body:getY(), objects.player.shape:getRadius())
-	-- end
-
+	-- player draw	
+	objects.player:draw()
 	-- treat 
 	love.graphics.setColor(110, 110, 110) 
 	love.graphics.polygon('fill', objects.treat.body:getWorldPoints(objects.treat.shape:getPoints()))
@@ -96,15 +82,16 @@ function love.focus(f) gameIsPaused = not f end
  
 function love.update(dt)
 	if gameIsPaused then return end
+	
 	if objects.treat.isFlagged then
 		x, y = randPos()
 		objects.treat.body:setPosition(x, y)
 		objects.treat.isFlagged = false
 	end
+
 	world:update(dt)
 
 	
-
 	if love.keyboard.isDown('right') then
 		objects.player.body:applyForce(200, 0)
 	end
@@ -121,6 +108,7 @@ end
 
 function beginContact(a, b, coll)
     x,y = coll:getNormal()
+	
 	if a:getUserData() == "Treat"  or b:getUserData() == "Treat" then
 		objects.player.score = objects.player.score + 1
 		objects.treat.isFlagged = true
