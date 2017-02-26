@@ -10,12 +10,15 @@ direction = {
 	left = 3
 }
 
+Wall = require "src.entities.wall"
 
 function love.load()
 	love.graphics.setBackgroundColor(0, 0, 0)
 	
 	width = love.graphics.getWidth()
   	height = love.graphics.getHeight()
+	print("getHeight: " .. height)
+	print("getWidth: " .. width)
 
 	love.physics.setMeter(64) --the height of a meter our worlds will be 64px
   	world = love.physics.newWorld(0, 0, true) --create a world for the bodies to exist in with horizontal gravity of 0 and vertical gravity of 0
@@ -28,25 +31,17 @@ function love.load()
  
 	--let's create the ground
 	objects.walls = {}
-	objects.walls.body = love.physics.newBody(world, 0, 0) 
-	objects.walls.wall = {}
-	
-	objects.walls.left = love.physics.newRectangleShape(0, 0, 15, height*2) 
-	objects.walls.top = love.physics.newRectangleShape(0, 0, width*2, 15) 
-	objects.walls.right = love.physics.newRectangleShape(width, 0, 15, height*2) 
-	objects.walls.bottom = love.physics.newRectangleShape(0, height, width*2, 15) 
+	wallPoints = {}
 
-	objects.walls.leftFixture = love.physics.newFixture(objects.walls.body, objects.walls.left) 
-	objects.walls.leftFixture:setUserData("LeftWall")
-	
-	objects.walls.rightFixture = love.physics.newFixture(objects.walls.body, objects.walls.right)
-	objects.walls.rightFixture:setUserData("RightWall")
+	table.insert(wallPoints, {0, 0, 15, height*2})-- left
+	table.insert(wallPoints, {0, 0, width*2, 15}) -- top
+	table.insert(wallPoints, {width/2, 0, 15, height*2}) -- right
+	table.insert(wallPoints, {0, height/2, width*2, 15}) -- bottom
 
-	objects.walls.topFixture = love.physics.newFixture(objects.walls.body, objects.walls.top)
-	objects.walls.topFixture:setUserData("TopWall")
-	
-	objects.walls.bottomFixture = love.physics.newFixture(objects.walls.body, objects.walls.bottom) 
-	objects.walls.bottomFixture:setUserData("BottomWall")
+	color = {0, 0, 255}
+	for i,point in ipairs(wallPoints) do
+		table.insert(objects.walls, Wall(world, point, color))
+	end
 
 	--let's create a player
 	objects.player = {}
@@ -77,16 +72,11 @@ end
 
 -- Hello comment
 function love.draw()
-	-- level
-	love.graphics.setColor(0, 0, 100) 
-  	love.graphics.polygon("fill", objects.walls.body:getWorldPoints(objects.walls.left:getPoints())) -- draw a "filled in" polygon using the ground's coordinates
-	love.graphics.setColor(0, 0, 255) 
-	love.graphics.polygon("fill", objects.walls.body:getWorldPoints(objects.walls.right:getPoints())) -- draw a "filled in" polygon using the ground's coordinates
-	love.graphics.setColor(0, 100, 100) 
-  	love.graphics.polygon("fill", objects.walls.body:getWorldPoints(objects.walls.top:getPoints())) -- draw a "filled in" polygon using the ground's coordinates
-	love.graphics.setColor(100, 0, 100) 
-  	love.graphics.polygon("fill", objects.walls.body:getWorldPoints(objects.walls.bottom:getPoints())) -- draw a "filled in" polygon using the ground's coordinates
-	
+	-- walls
+	for _,wall in ipairs(objects.walls) do
+		wall:draw()
+	end
+	 -- draw a "filled in" polygon using the ground's coordinates
 	
 	love.graphics.setColor(193, 47, 14) --set the drawing color to red for the player
 	-- for _, shape in ipairs(objects.player.shapes) do 
@@ -135,23 +125,23 @@ function beginContact(a, b, coll)
 		objects.player.score = objects.player.score + 1
 		objects.treat.isFlagged = true
 	end
-	print(objects.player.score)
-    print(a:getUserData().." colliding with "..b:getUserData().." with a vector normal of: "..x..", "..y)
+	-- print(objects.player.score)
+    -- print(a:getUserData().." colliding with "..b:getUserData().." with a vector normal of: "..x..", "..y)
 end
  
  
 function endContact(a, b, coll)
-    persisting = 0    -- reset since they're no longer touching
-    print(a:getUserData().." uncolliding with "..b:getUserData())
+    -- persisting = 0    -- reset since they're no longer touching
+    -- print(a:getUserData().." uncolliding with "..b:getUserData())
 end
  
 function preSolve(a, b, coll)
-    if persisting == 0 then    -- only say when they first start touching
-        print(a:getUserData().." touching "..b:getUserData())
-    elseif persisting < 20 then    -- then just start counting
-        print(" "..persisting)
-    end
-    persisting = persisting + 1    -- keep track of how many updates they've been touching for
+    -- if persisting == 0 then    -- only say when they first start touching
+    --     print(a:getUserData().." touching "..b:getUserData())
+    -- elseif persisting < 20 then    -- then just start counting
+    --     print(" "..persisting)
+    -- end
+    -- persisting = persisting + 1    -- keep track of how many updates they've been touching for
 end
  
 function postSolve(a, b, coll, normalimpulse, tangentimpulse)
