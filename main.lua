@@ -91,19 +91,7 @@ function love.update(dt)
 
 	world:update(dt)
 
-	
-	if love.keyboard.isDown('right') then
-		objects.player.body:applyForce(200, 0)
-	end
-	if love.keyboard.isDown('left') then
-	    objects.player.body:applyForce(-200, 0)
-	end
-	if love.keyboard.isDown('up') then
-		objects.player.body:applyForce(0, -200)
-	end
-	if love.keyboard.isDown('down') then
-		objects.player.body:applyForce(0, 200)
-	end
+	objects.player:update(dt)
 end
 
 function beginContact(a, b, coll)
