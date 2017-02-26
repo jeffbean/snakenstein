@@ -22,4 +22,7 @@ function Wall:draw()
     love.graphics.polygon("fill", self.body:getWorldPoints(self.shape:getPoints()))
 end
 
+function Wall:update(dt)
+end
+
 return Wall

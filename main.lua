@@ -30,7 +30,7 @@ function love.load()
 	objects = {} -- table to hold all our physical objects
  
 	--let's create the ground
-	objects.walls = {}
+	objects.entities = {}
 	wallPoints = {}
 
 	table.insert(wallPoints, {0, 0, 15, height*2})-- left
@@ -40,26 +40,23 @@ function love.load()
 
 	color = {0, 0, 255}
 	for i,point in ipairs(wallPoints) do
-		table.insert(objects.walls, Wall(world, point, color))
+		table.insert(objects.entities, Wall(world, point, color))
 	end
 
 	-- let's create a player
 	objects.player = Player(world, width/2, height/2, {193, 47, 14})
+	table.insert(objects.entities, objects.player)
 	-- make a treat to start
 	objects.treat = Treat(world, width / 3,  height / 3, 15, 15, {110, 110, 110})
+	table.insert(objects.entities, objects.treat)
 end
 
 -- Hello comment
 function love.draw()
 	-- walls
-	for _,wall in ipairs(objects.walls) do
-		wall:draw()
+	for _,o in ipairs(objects.entities) do
+		o:draw()
 	end
-	-- player draw	
-	objects.player:draw()
-	-- treat 
-	objects.treat:draw()
-
 	-- debug prints
 	love.graphics.print("Score: " .. objects.player.score, 15, 20)
 	love.graphics.print("FPS: " .. love.timer.getFPS(), 15, 2)
@@ -70,15 +67,12 @@ function love.focus(f) gameIsPaused = not f end
 function love.update(dt)
 	if gameIsPaused then return end
 	
-	if objects.treat.isFlagged then
-		x, y = randPos()
-		objects.treat.body:setPosition(x, y)
-		objects.treat.isFlagged = false
-	end
-
+	-- update the world
 	world:update(dt)
 
-	objects.player:update(dt)
+	for _,o in ipairs(objects.entities) do
+		o:update(dt)
+	end
 end
 
 function beginContact(a, b, coll)
