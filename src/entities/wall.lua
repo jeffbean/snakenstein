@@ -14,6 +14,7 @@ function Wall:init(world, points, color)
     self.body = love.physics.newBody(self.world, self.x, self.y, "static") 
     self.shape = love.physics.newRectangleShape(unpack(self.points))
     self.fixture = love.physics.newFixture(self.body, self.shape)
+    self.fixture:setUserData("Wall")
 end
 
 function Wall:draw()
