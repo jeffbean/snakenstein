@@ -3,14 +3,14 @@ Class = require "vendor.hump.class"
 local Player = Class{}
 
 local CHAIN_PART_RADIUS = 10
-local SPACE_BETWEEN_PARTS = 5;
-local CHAIN_PART_COUNT = 3
+local CHAIN_PART_COUNT = 5
 
 function Player:init(world, x, y, color)
     self.world = world
     self.x = x
 	self.y = y
 	self.color = color
+	self.image = love.graphics.newImage("images/chain.png")
 
     self.score = 0
 
@@ -19,17 +19,17 @@ function Player:init(world, x, y, color)
     self.head:setLinearDamping(5)
     self.head:setMass (0.1)
     -- end of snake, will be last chained part
-    self.tail = love.physics.newBody(self.world, self.x + 50, self.y + 50, "dynamic") 
+    self.tail = love.physics.newBody(self.world, self.x + 50, self.y + 50, "dynamic")
     self.tail:setLinearDamping(2)
     self.tail:setMass (0.1)
     -- shape
 
-    self.shape = love.physics.newCircleShape(20)
+    self.shape = love.physics.newCircleShape(12)
     -- Head fixture
     self.headFixture = love.physics.newFixture(self.head, self.shape)
     self.headFixture:setUserData("Head")
 	self.headFixture:setRestitution(0.1) --let the player bounce
-	self.headFixture:setFriction(0.9) -- set friction..
+	self.headFixture:setFriction(0.1) -- set friction..
 	self.headFixture:setCategory(2)  
 
     -- Tail section
@@ -43,11 +43,11 @@ function Player:init(world, x, y, color)
 	for i = 1, CHAIN_PART_COUNT, 1 do
 		local part = {}
 		part.body = love.physics.newBody(world, 0, 0, "dynamic")
-		part.shape = love.physics.newCircleShape(10)
+		part.shape = love.physics.newCircleShape(5)
 		part.fixture = love.physics.newFixture(part.body, part.shape)
 		part.fixture:setUserData("chain")
 		part.body:setPosition(i*CHAIN_PART_RADIUS,0)
-		part.body:setLinearDamping(10)
+		part.body:setLinearDamping(8)
 
 		-- chainparts should not collide with itself
 		part.fixture:setGroupIndex(-1)
@@ -56,13 +56,13 @@ function Player:init(world, x, y, color)
 		table.insert(self.chain, part)
 
 		if (i>1) then
-			--love.physics.newWeldJoint(chain.parts[i-1].body, chain.parts[i].body, CHAIN_PART_WIDTH/2, 0, -CHAIN_PART_WIDTH/2, 0, false)
+			--love.physics.newWeldJoint(self.chain[i-1].body, self.chain[i].body, 20/2, 0, -20/2, 0, false)
 			love.physics.newRevoluteJoint(self.chain[i-1].body, self.chain[i].body, i*CHAIN_PART_RADIUS - CHAIN_PART_RADIUS/2, 0, false)
 		end
 	end
     -- first body attach rope
-	love.physics.newRopeJoint(self.head, self.chain[1].body, self.head:getX() + (CHAIN_PART_RADIUS/3), self.head:getY() + (CHAIN_PART_RADIUS/3), CHAIN_PART_RADIUS-CHAIN_PART_RADIUS/2, 0, self.shape:getRadius(), true)
-    love.physics.newRopeJoint(self.chain[CHAIN_PART_COUNT].body, self.tail, CHAIN_PART_COUNT * CHAIN_PART_RADIUS +CHAIN_PART_RADIUS/2, 0,  self.tail:getX() + (CHAIN_PART_RADIUS/3) , self.head:getY() + (CHAIN_PART_RADIUS/3), self.shape:getRadius(), true)
+	love.physics.newRopeJoint(self.head, self.chain[1].body, self.head:getX(), self.head:getY(), self.chain[1].body:getX(), self.chain[1].body:getY(), self.shape:getRadius(), true)
+    love.physics.newRopeJoint(self.chain[CHAIN_PART_COUNT].body, self.tail, self.chain[CHAIN_PART_COUNT].body:getX(), self.chain[CHAIN_PART_COUNT].body:getY(), self.tail:getX(), self.tail:getY(), self.shape:getRadius(), true)
 
     local startX, startY = self.head:getPosition()
     local aimX, aimY = self.tail:getPosition()
@@ -74,12 +74,12 @@ function Player:init(world, x, y, color)
 end
 
 function Player:draw()
-    love.graphics.setColor(self.color) 
+    love.graphics.setColor(self.color)
     love.graphics.circle("fill", self.head:getX(), self.head:getY(), self.shape:getRadius())
-    love.graphics.setColor({150, 147, 14})
+	love.graphics.setColor(255, 255, 255, 50)
     for i = 1, CHAIN_PART_COUNT, 1 do
-        love.graphics.circle("fill", self.chain[i].body:getX(), self.chain[i].body:getY(), self.chain[i].shape:getRadius())
-    end
+		love.graphics.draw(self.image, self.chain[i].body:getX(), self.chain[i].body:getY(), self.chain[i].body:getAngle(), 1,1,self.image:getWidth() /2, self.image:getHeight()/2)
+	end
     love.graphics.setColor(self.color)
     love.graphics.circle("fill", self.tail:getX(), self.tail:getY(), self.shape:getRadius())
 
