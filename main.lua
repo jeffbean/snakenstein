@@ -1,10 +1,10 @@
 
 require "game"
 require "keyboard"
-require "snake"
 require "render"
 require "pellet"
 require "tile"
+require "snake"
 
 score = 0
 -- -15
@@ -41,13 +41,17 @@ function love.load()
 	tiles = {}
 	gridInit()
 
+	objects = {}
 	objects.entities = {}
 	objects.entities.players = {}
 
-	table.insert(objects.entities.players, Player(10, 10))
+	table.insert(objects.entities.players, Player(10, 10, {r=100,g=255,b=100}))
+end
 
-	tiles.snake1.direction = controls.up
-	tiles.snake1.color = {r=100,g=255,b=100}
+function love.update(dt)
+	for _,o in ipairs(objects.entities) do
+		o:update(dt)
+	end	
 end
 
 function renderInit()
