@@ -19,7 +19,7 @@ function love.load()
 	objects.entities.players = {}
 	objects.entities.walls = {}
 
-	table.insert(objects.entities, Player(world, 10, 10, {100,255,100}))
+	table.insert(objects.entities, Player(15, 15, {100,255,100}))
 	
 	wallPoints = {}
 	table.insert(wallPoints, {0, 0, 15, height*2})-- left
@@ -53,19 +53,4 @@ function love.draw()
 		-- debug prints
 	-- love.graphics.print("Score: " .. objects.entities.players[0].score, 15, 20)
 	love.graphics.print("FPS: " .. love.timer.getFPS(), 15, 2)
-end
-
-function beginContact(a, b, coll)
-    x,y = coll:getNormal()
-	
-	if a:getUserData() == "Treat" then 
-		b.score = b.score + 1
-		a.isFlagged = true
-	end
-	if b:getUserData() == "Treat" then
-		a.score = b.score + 1
-		b.isFlagged = true
-	end
-	-- print(objects.player.score)
-    -- print(a:getUserData().." colliding with "..b:getUserData().." with a vector normal of: "..x..", "..y)
 end

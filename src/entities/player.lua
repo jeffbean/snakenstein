@@ -10,8 +10,7 @@ local direction = {
 	left = 3
 }
 
-function Player:init(world, x, y, color)
-	self.world = world
+function Player:init(x, y, color)
 	-- TODO: not default to direction right since many players willl start different places
     self.direction = direction.right
 	self.x = x
@@ -20,12 +19,6 @@ function Player:init(world, x, y, color)
 	self.speed = 100
 	self.color = color
     self.score = 0
-	self.body = love.physics.newBody(self.world, self.x, self.y, "dynamic")
-	self.shape = love.physics.newCircleShape(20)
-    self.fixture = love.physics.newFixture(self.body, self.shape)
-
-
-	self.fixture:setUserData("Player")
 	-- -- for the many parts of the snake, start with 3 units
 	-- for i=1, self.score+3, 1 do
 		-- print("Putting snake" .. i .. " at position x" .. self.x .. " y" .. self.y)
@@ -36,8 +29,8 @@ end
 function Player:draw()
     love.graphics.setColor(self.color) 
 	-- draw the head thing
-	love.graphics.circle("fill", self.body:getX(), self.body:getY(), self.shape:getRadius())
-	-- love.graphics.rectangle("fill", self.x, self.y, GRID_SIZE, GRID_SIZE)
+	-- love.graphics.circle("fill", self.body:getX(), self.body:getY(), self.shape:getRadius())
+	love.graphics.rectangle("fill", self.x, self.y, GRID_SIZE, GRID_SIZE)
     -- for _,o in ipair(self.entities.body) do
         -- love.graphics.rectangle("fill", o.x, o.y, GRID_SIZE, GRID_SIZE)
     -- end
@@ -74,19 +67,48 @@ function Player:update(dt)
 	-- elseif self.direction == direction.left then
 	--     self.body:setX(self.body:getX() - (self.speed * dt))
 	-- end
-	if love.keyboard.isDown('right') then
-		self.body:applyLinearImpulse(10, 0)
+	-- if love.keyboard.isDown('right') then
+	-- 	self.body:applyLinearImpulse(10, 0)
+	-- end
+	-- if love.keyboard.isDown('left') then
+	--     self.body:applyLinearImpulse(-10, 0)
+	-- end
+	-- if love.keyboard.isDown('up') then
+	-- 	self.body:applyLinearImpulse(0, -10)
+	-- end
+	-- if love.keyboard.isDown('down') then
+	-- 	self.body:applyLinearImpulse(0, 10)
+	-- end
+	if self.direction == direction.up then
+		self.y = math.clamp(self.y - (self.speed * dt), 15, height)
+	elseif self.direction == direction.down then 
+	    self.y = math.clamp(self.y + (self.speed * dt), 15, height - GRID_SIZE)
+	elseif self.direction == direction.right then 
+		self.x = math.clamp(self.x + (self.speed * dt), 15, width - GRID_SIZE)
+	elseif self.direction == direction.left then
+	    self.x = math.clamp(self.x - (self.speed * dt), 15, width)
 	end
-	if love.keyboard.isDown('left') then
-	    self.body:applyLinearImpulse(-10, 0)
-	end
-	if love.keyboard.isDown('up') then
-		self.body:applyLinearImpulse(0, -10)
-	end
-	if love.keyboard.isDown('down') then
-		self.body:applyLinearImpulse(0, 10)
-	end
-	print("player..", self.direction, ".. x:[", self.body:getX(), "]")
+	-- if CheckCollision(self, objects.entities) then
+	-- 	player.score = player.score + 1
+	-- 	treat.x, treat.y = randPos()
+	-- end
+	print("player..", self.direction, ".. x:[", self.x, "]")
+end
+
+function math.clamp(x, min, max)
+  return x < min and min or (x > max and max or x)
+end
+
+function CheckCollision(box1, box2)
+    if box1.x > box2.x + box2.w - 1 or -- Is box1 on the right side of box2?
+       box1.y > box2.y + box2.h - 1 or -- Is box1 under box2?
+       box2.x > box1.x + box1.w - 1 or -- Is box2 on the right side of box1?
+       box2.y > box1.y + box1.h - 1    -- Is b2 under b1?
+    then
+        return false
+    else
+        return true
+    end
 end
 
 return Player
