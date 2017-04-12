@@ -1,7 +1,6 @@
 
 require "game"
 require "keyboard"
-require "render"
 require "pellet"
 require "tile"
 require "snake"
@@ -14,13 +13,10 @@ screenY = 1
 key = ""           -- Latest pressed key
 latestKey = ""
 gameIsLost = false -- Whether the game has been lost or not
-screen = "start"    -- Game screen
 pelletTimer = 0    -- How long until the next pellet
-snakeLen = 3       -- Default snake length
 keyBuffer = {}     -- Key buffer
 pellets = {}       -- List of on-screen pellets
 pelletNum = 0      -- Unique pellet number
-menuStage = 0
 --keyWait = 0
 score = 0
 next_time = 0
@@ -38,8 +34,6 @@ function love.load()
 	randomInit()
 	pelletTimer = math.random(pelletMin, pelletMax)
 	loveInit()
-	tiles = {}
-	gridInit()
 
 	objects = {}
 	objects.entities = {}
@@ -52,6 +46,12 @@ function love.update(dt)
 	for _,o in ipairs(objects.entities) do
 		o:update(dt)
 	end	
+end
+
+function love.draw()
+	for _,o in ipairs(objects.entities) do
+		o:draw()
+	end
 end
 
 function renderInit()
