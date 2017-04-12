@@ -1,114 +1,85 @@
-padding = 15
-level = {
-	gridSize = 15
-}
 
-direction = {
-	up = 0,
-	down = 1,
-	right = 2,
-	left = 3
-}
+require "game"
+require "keyboard"
+require "snake"
+require "render"
+require "pellet"
+require "tile"
 
-Wall = require "src.entities.wall"
-Player = require "src.entities.player"
-Treat = require "src.entities.treat"
+score = 0
+-- -15
+offset = 0
+screenX = 1
+screenY = 1
+key = ""           -- Latest pressed key
+latestKey = ""
+gameIsLost = false -- Whether the game has been lost or not
+screen = "start"    -- Game screen
+pelletTimer = 0    -- How long until the next pellet
+snakeLen = 3       -- Default snake length
+keyBuffer = {}     -- Key buffer
+pellets = {}       -- List of on-screen pellets
+pelletNum = 0      -- Unique pellet number
+menuStage = 0
+--keyWait = 0
+score = 0
+next_time = 0
+
+min_dt = 1/60
+
+love_timer_sleep = love.timer.sleep -- in s (like >=0.8.0)
+if love._version:find("^0%.[0-7]%.") then -- if version < 0.8.0
+	love_timer_sleep = function(s) love.timer.sleep(s*1000) end
+end
 
 function love.load()
-	love.graphics.setBackgroundColor(0, 0, 0)
-	
-	width = love.graphics.getWidth()
-  	height = love.graphics.getHeight()
+	-- if love.graphics.setMode(screenW, screenH) == false then love.event.quit() end
+	renderInit()
+	randomInit()
+	pelletTimer = math.random(pelletMin, pelletMax)
+	loveInit()
+	tiles = {}
+	gridInit()
 
-	love.physics.setMeter(64) --the height of a meter our worlds will be 64px
-  	world = love.physics.newWorld(0, 0, true) --create a world for the bodies to exist in with horizontal gravity of 0 and vertical gravity of 0
-	--These callback function names can be almost any you want:
-	world:setCallbacks(beginContact, endContact, preSolve, postSolve)
-	
-	objects = {} -- table to hold all our physical objects
- 
-	--let's create the ground
-	objects.entities = {}
-	local wallPoints = {}
-
-	table.insert(wallPoints, {0, 0, 15, height*2})-- left
-	table.insert(wallPoints, {0, 0, width*2, 15}) -- top
-	table.insert(wallPoints, {width/2, 0, 15, height*2}) -- right
-	table.insert(wallPoints, {0, height/2, width*2, 15}) -- bottom
-
-	local color = {0, 0, 255}
-	for i,point in ipairs(wallPoints) do
-		table.insert(objects.entities, Wall(world, point, color))
+	for i=1, snakeLen, 1 do
+		print("Putting snake" .. i .. " at position x" .. snakeX .. " y" .. snakeY)
+		tiles["snake"..i] = {color="green",x=snakeX,y=snakeY}
+		grid[snakeX][snakeY] = "snake"..i
+		snakeY = snakeY + 1
 	end
 
-	-- let's create a player
-	objects.player = Player(world, width/2, height/2, {193, 47, 14})
-	table.insert(objects.entities, objects.player)
-	-- make a treat to start
-	objects.treat = Treat(world, width / 3,  height / 3, 15, 15, {110, 110, 110})
-	table.insert(objects.entities, objects.treat)
+	tiles.snake1.direction = controls.up
+	tiles.snake1.color = {r=100,g=255,b=100}
 end
 
--- Hello comment
-function love.draw()
-	-- walls
-	for _,o in ipairs(objects.entities) do
-		o:draw()
-	end
-	-- debug prints
-	love.graphics.print("Score: " .. objects.player.score, 15, 20)
-	love.graphics.print("FPS: " .. love.timer.getFPS(), 15, 2)
+function renderInit()
+	screenW2 = screenW / 2
+	screenH2 = screenH / 2
+	circleSize = math.floor(tileSize / 2)
+	squareOffset = math.ceil((gridSize - tileSize) / 2) + 3 - gridSize
+	circleOffset = math.ceil(gridSize / 2) + 3 - gridSize
 end
 
-function love.focus(f) gameIsPaused = not f end
- 
-function love.update(dt)
-	if gameIsPaused then return end
-	
-	-- update the world
-	world:update(dt)
+function loveInit()
+	gfx = love.graphics
+	kbd = love.keyboard
+	gfx.setLineWidth(1)
+	gfx.setLineStyle("rough")
+end
 
-	for _,o in ipairs(objects.entities) do
-		o:update(dt)
+function gridInit()
+	grid = {}
+	for x = 1, gameW, 1 do
+		grid[x] = {}
+		for y=1, gameH, 1 do
+			grid[x][y] = ""
+		end
 	end
 end
 
-function beginContact(a, b, coll)
-    x,y = coll:getNormal()
-	
-	if a:getUserData() == "Treat"  or b:getUserData() == "Treat" then
-		objects.player.score = objects.player.score + 1
-		objects.treat.isFlagged = true
-	end
-	-- print(objects.player.score)
-    -- print(a:getUserData().." colliding with "..b:getUserData().." with a vector normal of: "..x..", "..y)
+function randomInit()
+	math.randomseed(os.time())
+	math.random()
+	math.random()
+	math.random()
 end
- 
- 
-function endContact(a, b, coll)
-    -- persisting = 0    -- reset since they're no longer touching
-    -- print(a:getUserData().." uncolliding with "..b:getUserData())
-end
- 
-function preSolve(a, b, coll)
-    -- if persisting == 0 then    -- only say when they first start touching
-    --     print(a:getUserData().." touching "..b:getUserData())
-    -- elseif persisting < 20 then    -- then just start counting
-    --     print(" "..persisting)
-    -- end
-    -- persisting = persisting + 1    -- keep track of how many updates they've been touching for
-end
- 
-function postSolve(a, b, coll, normalimpulse, tangentimpulse)
--- we won't do anything with this function
-end
-
-
-function randPos()
-	local x,y
-	x = math.random(1, width)
-	y = math.random(1, height)
-	print("Random x"..x.." y"..y)
-	return x,y
-end
-
