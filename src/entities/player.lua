@@ -61,8 +61,18 @@ function Player:init(world, x, y, color)
 		end
 	end
     -- first body attach rope
-	love.physics.newRopeJoint(self.head, self.chain[1].body, self.head:getX() + (CHAIN_PART_RADIUS/3), self.head:getY() + (CHAIN_PART_RADIUS/3), CHAIN_PART_RADIUS-CHAIN_PART_RADIUS/2, 0, self.shape:getRadius(), true)
-    love.physics.newRopeJoint(self.chain[CHAIN_PART_COUNT].body, self.tail, CHAIN_PART_COUNT * CHAIN_PART_RADIUS +CHAIN_PART_RADIUS/2, 0,  self.tail:getX() + (CHAIN_PART_RADIUS/3) , self.head:getY() + (CHAIN_PART_RADIUS/3), self.shape:getRadius(), true)
+	love.physics.newRopeJoint(
+        self.head, self.chain[1].body, 
+        self.head:getX() + (CHAIN_PART_RADIUS/3), self.head:getY() + (CHAIN_PART_RADIUS/3), 
+        CHAIN_PART_RADIUS-CHAIN_PART_RADIUS/2, 0, self.shape:getRadius(),
+        true
+    )
+    love.physics.newRopeJoint(
+        self.chain[CHAIN_PART_COUNT].body, self.tail, 
+        CHAIN_PART_COUNT * CHAIN_PART_RADIUS +CHAIN_PART_RADIUS/2, 0,  
+        self.tail:getX() + (CHAIN_PART_RADIUS/3) , self.head:getY() + (CHAIN_PART_RADIUS/3), self.shape:getRadius(),
+        true
+    )
 
     local startX, startY = self.head:getPosition()
     local aimX, aimY = self.tail:getPosition()
