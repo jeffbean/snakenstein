@@ -28,20 +28,8 @@ function renderError()
 end
 
 function renderBoard()
-	setColor("white")
-	gfx.rectangle("line", screenX+2, screenY+2, screenW-5, screenH-5)
-	for x,v in pairs(grid) do
-		for y,v in pairs(v) do
-			if v ~= "" then
-				--print("Displaying "..v..x..y)
-				setColor(tiles[v].color)
-				if tiles[v].type == "circle" then
-					gfx.circle("fill", screenX+circleOffset+x*gridSize, screenX+circleOffset+y*gridSize, circleSize, tileSize)
-				else
-					gfx.rectangle("fill", screenX+squareOffset+x*gridSize, screenX+squareOffset+y*gridSize, tileSize, tileSize)
-				end
-			end
-		end
+	for _,o in ipairs(objects.entities) do
+		o:draw()
 	end
 end
 

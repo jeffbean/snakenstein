@@ -41,12 +41,10 @@ function love.load()
 	tiles = {}
 	gridInit()
 
-	for i=1, snakeLen, 1 do
-		print("Putting snake" .. i .. " at position x" .. snakeX .. " y" .. snakeY)
-		tiles["snake"..i] = {color="green",x=snakeX,y=snakeY}
-		grid[snakeX][snakeY] = "snake"..i
-		snakeY = snakeY + 1
-	end
+	objects.entities = {}
+	objects.entities.players = {}
+
+	table.insert(objects.entities.players, Player(10, 10))
 
 	tiles.snake1.direction = controls.up
 	tiles.snake1.color = {r=100,g=255,b=100}

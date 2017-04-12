@@ -1,5 +1,5 @@
-gameW = 15     -- Game width
-gameH = 15     -- Game height
+gameW = 30     -- Game width
+gameH = 30     -- Game height
 snakeX = 8     -- Starting snake X position
 snakeY = 8     -- Starting snake Y position
 gridSize = 30  -- Size of the grid squares
