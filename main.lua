@@ -1,87 +1,71 @@
 
-require "game"
-require "keyboard"
-require "pellet"
-require "tile"
-require "snake"
+Player = require "src.entities.player"
+Wall = require "src.entities.wall"
+Treat = require "src.entities.treat"
 
-score = 0
--- -15
-offset = 0
-screenX = 1
-screenY = 1
-key = ""           -- Latest pressed key
-latestKey = ""
-gameIsLost = false -- Whether the game has been lost or not
-pelletTimer = 0    -- How long until the next pellet
-keyBuffer = {}     -- Key buffer
-pellets = {}       -- List of on-screen pellets
-pelletNum = 0      -- Unique pellet number
---keyWait = 0
-score = 0
-next_time = 0
-
-min_dt = 1/60
-
-love_timer_sleep = love.timer.sleep -- in s (like >=0.8.0)
-if love._version:find("^0%.[0-7]%.") then -- if version < 0.8.0
-	love_timer_sleep = function(s) love.timer.sleep(s*1000) end
-end
 
 function love.load()
+	love.physics.setMeter(64) --the height of a meter our worlds will be 64px
+  	world = love.physics.newWorld(0, 0, true) --create a world for the bodies to exist in with horizontal gravity of 0 and vertical gravity of 0
+	--These callback function names can be almost any you want:
+	world:setCallbacks(beginContact, endContact, preSolve, postSolve)
+
 	-- if love.graphics.setMode(screenW, screenH) == false then love.event.quit() end
-	renderInit()
-	randomInit()
-	pelletTimer = math.random(pelletMin, pelletMax)
-	loveInit()
+	width = love.graphics.getWidth()
+  	height = love.graphics.getHeight()
 
 	objects = {}
 	objects.entities = {}
 	objects.entities.players = {}
+	objects.entities.walls = {}
 
-	table.insert(objects.entities.players, Player(10, 10, {r=100,g=255,b=100}))
+	table.insert(objects.entities, Player(world, 10, 10, {100,255,100}))
+	
+	wallPoints = {}
+	table.insert(wallPoints, {0, 0, 15, height*2})-- left
+	table.insert(wallPoints, {0, 0, width*2, 15}) -- top
+	table.insert(wallPoints, {width/2, 0, 15, height*2}) -- right
+	table.insert(wallPoints, {0, height/2, width*2, 15}) -- bottom
+
+	color = {0, 0, 255}
+	for i,point in ipairs(wallPoints) do
+		table.insert(objects.entities, Wall(world, point, color))
+	end
+
 end
 
 function love.update(dt)
+	if gameIsPaused then return end
+	
+	world:update(dt)
+
 	for _,o in ipairs(objects.entities) do
 		o:update(dt)
 	end	
 end
 
+function love.focus(f) gameIsPaused = not f end
+
 function love.draw()
 	for _,o in ipairs(objects.entities) do
 		o:draw()
 	end
+		-- debug prints
+	-- love.graphics.print("Score: " .. objects.entities.players[0].score, 15, 20)
+	love.graphics.print("FPS: " .. love.timer.getFPS(), 15, 2)
 end
 
-function renderInit()
-	screenW2 = screenW / 2
-	screenH2 = screenH / 2
-	circleSize = math.floor(tileSize / 2)
-	squareOffset = math.ceil((gridSize - tileSize) / 2) + 3 - gridSize
-	circleOffset = math.ceil(gridSize / 2) + 3 - gridSize
-end
-
-function loveInit()
-	gfx = love.graphics
-	kbd = love.keyboard
-	gfx.setLineWidth(1)
-	gfx.setLineStyle("rough")
-end
-
-function gridInit()
-	grid = {}
-	for x = 1, gameW, 1 do
-		grid[x] = {}
-		for y=1, gameH, 1 do
-			grid[x][y] = ""
-		end
+function beginContact(a, b, coll)
+    x,y = coll:getNormal()
+	
+	if a:getUserData() == "Treat" then 
+		b.score = b.score + 1
+		a.isFlagged = true
 	end
-end
-
-function randomInit()
-	math.randomseed(os.time())
-	math.random()
-	math.random()
-	math.random()
+	if b:getUserData() == "Treat" then
+		a.score = b.score + 1
+		b.isFlagged = true
+	end
+	-- print(objects.player.score)
+    -- print(a:getUserData().." colliding with "..b:getUserData().." with a vector normal of: "..x..", "..y)
 end
