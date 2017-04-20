@@ -2,7 +2,6 @@ Class = require "vendor.hump.class"
 
 local Player = Class{}
 
-local GRID_SIZE = 10
 local direction = {
 	up = 0,
 	down = 1,
@@ -15,10 +14,16 @@ function Player:init(x, y, color)
     self.direction = direction.right
 	self.x = x
 	self.y = y
+	self.w = GRID_SIZE
+	self.h = GRID_SIZE
 
-	self.speed = 100
+	self.speed = 40
 	self.color = color
     self.score = 0
+
+	self.phantom_x = self.x
+	self.phantom_y = self.y
+
 	-- -- for the many parts of the snake, start with 3 units
 	-- for i=1, self.score+3, 1 do
 		-- print("Putting snake" .. i .. " at position x" .. self.x .. " y" .. self.y)
@@ -30,7 +35,7 @@ function Player:draw()
     love.graphics.setColor(self.color) 
 	-- draw the head thing
 	-- love.graphics.circle("fill", self.body:getX(), self.body:getY(), self.shape:getRadius())
-	love.graphics.rectangle("fill", self.x, self.y, GRID_SIZE, GRID_SIZE)
+	love.graphics.rectangle("fill", self.x, self.y, self.w, self.h)
     -- for _,o in ipair(self.entities.body) do
         -- love.graphics.rectangle("fill", o.x, o.y, GRID_SIZE, GRID_SIZE)
     -- end
@@ -79,27 +84,54 @@ function Player:update(dt)
 	-- if love.keyboard.isDown('down') then
 	-- 	self.body:applyLinearImpulse(0, 10)
 	-- end
+	oldX, oldY = self.phantom_x, self.phantom_y
+	oldModX = oldX % GRID_SIZE
+	oldModY = oldY % GRID_SIZE
+
 	if self.direction == direction.up then
-		self.y = math.clamp(self.y - (self.speed * dt), 15, height)
+		self.phantom_y = math.clamp(self.phantom_y - (self.speed * dt), GRID_SIZE, height)
+		modY = self.phantom_y % GRID_SIZE
+		if oldModY < modY then 
+				self.y = self.phantom_y - modY
+		end
 	elseif self.direction == direction.down then 
-	    self.y = math.clamp(self.y + (self.speed * dt), 15, height - GRID_SIZE)
+	    self.phantom_y = math.clamp(self.phantom_y + (self.speed * dt), GRID_SIZE, height - GRID_SIZE*2)
+		modY = self.phantom_y % GRID_SIZE
+		if oldModY > modY then 
+			self.y = self.phantom_y - modY
+		end
 	elseif self.direction == direction.right then 
-		self.x = math.clamp(self.x + (self.speed * dt), 15, width - GRID_SIZE)
+		self.phantom_x = math.clamp(self.phantom_x + (self.speed * dt), GRID_SIZE, width - GRID_SIZE*2)
+		modX = self.phantom_x % GRID_SIZE
+		if oldModX > modX then 
+			self.x = self.phantom_x - modX
+		end
 	elseif self.direction == direction.left then
-	    self.x = math.clamp(self.x - (self.speed * dt), 15, width)
+	    self.phantom_x = math.clamp(self.phantom_x - (self.speed * dt), GRID_SIZE, width)
+		modX = self.phantom_x % GRID_SIZE
+		if oldModX < modX then 
+			self.x = self.phantom_x - modX
+		end
 	end
-	-- if CheckCollision(self, objects.entities) then
-	-- 	player.score = player.score + 1
-	-- 	treat.x, treat.y = randPos()
-	-- end
-	print("player..", self.direction, ".. x:[", self.x, "]")
+	
+	
+	if modY == 0 then
+		self.y = self.phantom_y
+	end 
+	if CheckCollisionBox(self, objects.entities.treat) then
+		self.score = self.score + 1
+		objects.entities.treat.x, objects.entities.treat.y = randPos()
+	end
+	print("player..         .. x:[", self.x, "]", ".. y:[", self.y, "]")
+	print("phantom player  .. px:[", self.phantom_x, "]", ".. py:[", self.phantom_y, "]", " modX: ", modX)
+
 end
 
 function math.clamp(x, min, max)
   return x < min and min or (x > max and max or x)
 end
 
-function CheckCollision(box1, box2)
+function CheckCollisionBox(box1, box2)
     if box1.x > box2.x + box2.w - 1 or -- Is box1 on the right side of box2?
        box1.y > box2.y + box2.h - 1 or -- Is box1 under box2?
        box2.x > box1.x + box1.w - 1 or -- Is box2 on the right side of box1?
@@ -109,6 +141,26 @@ function CheckCollision(box1, box2)
     else
         return true
     end
+end
+function CheckCollision(box, entities)
+	for _,o in ipairs(entities) do
+		if CheckCollisionBox(box, o) then
+			print("coliding with object.. ", o)
+			for k,v in pairs(o) do
+				print(k,v)
+			end
+			return true
+		end
+	end
+	return false
+end
+
+function randPos()
+	numberX = love.math.random( GRID_SIZE, width - GRID_SIZE ) 
+	numberY  = love.math.random( GRID_SIZE, height - GRID_SIZE )
+	modX, modY = numberX % GRID_SIZE, numberY % GRID_SIZE
+	
+	return numberX - modX, numberY - modY
 end
 
 return Player
