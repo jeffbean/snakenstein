@@ -28,10 +28,10 @@ function Player:init(x, y, color)
 
 	-- -- for the many parts of the snake, start with 3 units
 	self.body = {}
-	table.insert(self.body, {x=self.x, y=self.y})
+	table.insert(self.body, {name="head", x=self.x, y=self.y})
 	for i=1, self.score+3, 1 do
 		print("Putting snake" .. i .. " at position x" .. self.x .. " y" .. self.y)
-		table.insert(self.body, {x=self.x- (GRID_SIZE * i), y=self.y })
+		table.insert(self.body, {name=i, x=self.x- (GRID_SIZE * i), y=self.y })
 	end
 end
 
@@ -118,8 +118,11 @@ function Player:update(dt)
 	if CheckCollisionBox(self, objects.entities.treat) then
 		self.score = self.score + 1
 		objects.entities.treat.x, objects.entities.treat.y = randPos()
-		
 		self:newBodyPart(self.direction)
+	end
+	if self:CheckCollision(table.slice(self.body, 2)) then
+		print("SNAKE COLLIDE")
+		
 	end
 	-- need to do the final update to the body movement last becasue we move all the values around here
 	--   we still need them to be in place for any addition calculations and such
@@ -128,7 +131,15 @@ function Player:update(dt)
 	end
 	-- print("phantom player  .. px:[", self.phantom_x, "]", ".. py:[", self.phantom_y, "]", " modX: ", modX)
 end
+function table.slice(tbl, first, last, step)
+	local sliced = {}
 
+	for i = first or 1, last or #tbl, step or 1 do
+		sliced[#sliced+1] = tbl[i]
+	end
+
+	return sliced
+end
 function Player:updateBody(leading_x, leading_y) 
 	self.body[1].x = leading_x
 	self.body[1].y = leading_y
@@ -136,7 +147,7 @@ function Player:updateBody(leading_x, leading_y)
 	-- print("OLD player..     .. x:[", oldX, "]", ".. y:[", oldY, "]")
 	-- print("body 1 state..      x:[", self.body[1].x, "]", ".. y:[", self.body[1].y, "]")
 	-- This goes backwards through a list to move a snake body 
-	for i=table.getn(self.body), 2, -1 do 
+	for i=#self.body, 2, -1 do 
 		-- print("BEFORE body ", i ," state..      x:[", self.body[i].x, "]", ".. y:[", self.body[i].y, "]")
 		self.body[i].x = self.body[i-1].x
 		self.body[i].y = self.body[i-1].y
@@ -180,20 +191,21 @@ function math.clamp(x, min, max)
 end
 
 function CheckCollisionBox(box1, box2)
-    if box1.x > box2.x + box2.w - 1 or -- Is box1 on the right side of box2?
-       box1.y > box2.y + box2.h - 1 or -- Is box1 under box2?
-       box2.x > box1.x + box1.w - 1 or -- Is box2 on the right side of box1?
-       box2.y > box1.y + box1.h - 1    -- Is b2 under b1?
+	
+    if box1.x > box2.x + GRID_SIZE - 1 or -- Is box1 on the right side of box2?
+       box1.y > box2.y + GRID_SIZE - 1 or -- Is box1 under box2?
+       box2.x > box1.x + GRID_SIZE - 1 or -- Is box2 on the right side of box1?
+       box2.y > box1.y + GRID_SIZE - 1    -- Is b2 under b1?
     then
         return false
     else
         return true
     end
 end
-function CheckCollision(box, entities)
+function Player:CheckCollision(entities)
 	for _,o in ipairs(entities) do
-		if CheckCollisionBox(box, o) then
-			print("coliding with object.. ", o)
+		if CheckCollisionBox(self, o) then
+			print(self.name)
 			for k,v in pairs(o) do
 				print(k,v)
 			end
