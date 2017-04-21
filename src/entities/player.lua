@@ -18,7 +18,7 @@ function Player:init(x, y, color)
 	self.w = GRID_SIZE
 	self.h = GRID_SIZE
 
-	self.speed = 5
+	self.speed = 20
 	self.color = color
     self.score = 0
 	
@@ -58,25 +58,25 @@ function Player:update(dt)
 	-- FIXME: Need to have a queued up direction since right now you can trick it to move backwards during one mod cycle on the grid
 
 	if love.keyboard.isDown('right') then
-		self.phantom_y = self.phantom_y - oldModPY
+		-- self.phantom_y = self.phantom_y - oldModPY
 		
 		if self.direction ~= direction.left then 
 			self.direction = direction.right
 		end
 	elseif love.keyboard.isDown('left') then
-		self.phantom_y = self.phantom_y - oldModPY
+		-- self.phantom_y = self.phantom_y - oldModPY
 
 		if self.direction ~= direction.right then 
 			self.direction = direction.left
 		end
 	elseif love.keyboard.isDown('up') then
-		self.phantom_x = self.phantom_x - oldModPX
+		-- self.phantom_x = self.phantom_x - oldModPX
 
 		if self.direction ~= direction.down then
 			self.direction = direction.up
 		end
 	elseif love.keyboard.isDown('down') then
-		self.phantom_x = self.phantom_x - oldModPX
+		-- self.phantom_x = self.phantom_x - oldModPX
 
 		if self.direction ~= direction.up then
 			self.direction = direction.down
@@ -113,48 +113,65 @@ function Player:update(dt)
 			flag_me = true
 		end
 	end
-	if flag_me == true then
-		self.body[1].x = oldX
-		self.body[1].y = oldY
-		-- print("player..         .. x:[", self.x, "]", ".. y:[", self.y, "]")
-		-- print("OLD player..     .. x:[", oldX, "]", ".. y:[", oldY, "]")
-		-- print("body 1 state..      x:[", self.body[1].x, "]", ".. y:[", self.body[1].y, "]")
-
-		for i=table.getn(self.body), 2, -1 do 
-			-- print("BEFORE body ", i ," state..      x:[", self.body[i].x, "]", ".. y:[", self.body[i].y, "]")
-
-			self.body[i].x = self.body[i-1].x
-			self.body[i].y = self.body[i-1].y
-			-- print("AFTER body ", i ," state..      x:[", self.body[i].x, "]", ".. y:[", self.body[i].y, "]")
-
-		end
-	end
+	
 
 	if CheckCollisionBox(self, objects.entities.treat) then
 		self.score = self.score + 1
 		objects.entities.treat.x, objects.entities.treat.y = randPos()
-		-- self:newBodyPart(self.direction)
+		
+		self:newBodyPart(self.direction)
 	end
-
+	-- need to do the final update to the body movement last becasue we move all the values around here
+	--   we still need them to be in place for any addition calculations and such
+	if flag_me == true then
+		self:updateBody(oldX, oldY)
+	end
 	-- print("phantom player  .. px:[", self.phantom_x, "]", ".. py:[", self.phantom_y, "]", " modX: ", modX)
-
-
 end
 
-function Player:newBodyPart(add_direction)
+function Player:updateBody(leading_x, leading_y) 
+	self.body[1].x = leading_x
+	self.body[1].y = leading_y
+	-- print("player..         .. x:[", self.x, "]", ".. y:[", self.y, "]")
+	-- print("OLD player..     .. x:[", oldX, "]", ".. y:[", oldY, "]")
+	-- print("body 1 state..      x:[", self.body[1].x, "]", ".. y:[", self.body[1].y, "]")
+	-- This goes backwards through a list to move a snake body 
+	for i=table.getn(self.body), 2, -1 do 
+		-- print("BEFORE body ", i ," state..      x:[", self.body[i].x, "]", ".. y:[", self.body[i].y, "]")
+		self.body[i].x = self.body[i-1].x
+		self.body[i].y = self.body[i-1].y
+		-- print("AFTER body ", i ," state..      x:[", self.body[i].x, "]", ".. y:[", self.body[i].y, "]")
+	end
+end
+
+function Player:newBodyPart()
 	-- TODO: collistion on walls when adding new parts
 	table_length = table.getn(self.body)
+	lastX, lastY = self.body[table_length].x, self.body[table_length].y
+	nextX, nextY = self.body[table_length-1].x, self.body[table_length-1].y
+	if lastX < nextX then 
+		add_direction = direction.left
+	elseif lastX > nextX then
+		add_direction = direction.right
+	elseif lastY < nextY then
+		add_direction = direction.down
+	elseif lastY > nextY then
+		add_direction = direction.up
+	end 
+	-- print("add_direction detected: ", add_direction)
+	-- print("last x", table_length, ": ", lastX, "y", table_length, ": ", lastY)
+	-- print("next x", table_length-1, ": ", nextX, "y", table_length-1, ": ", nextY)
 
 	if add_direction == direction.up then
-		new_body = {x=self.body[table_length].x, y=self.body[table_length].y - GRID_SIZE}
-	elseif add_direction == direction.down then
 		new_body = {x=self.body[table_length].x, y=self.body[table_length].y + GRID_SIZE}
+	elseif add_direction == direction.down then
+		new_body = {x=self.body[table_length].x, y=self.body[table_length].y - GRID_SIZE}
 	elseif add_direction == direction.right then
 		new_body = {x=self.body[table_length].x + GRID_SIZE, y=self.body[table_length].y}
 	elseif add_direction == direction.left then
 		new_body = {x=self.body[table_length].x - GRID_SIZE, y=self.body[table_length].y}
 	end
-
+	print("Adding new body part: diretion ".. add_direction .. " x:" .. new_body.x .." y:" .. new_body.y)
 	table.insert(self.body, new_body)
 end
 
