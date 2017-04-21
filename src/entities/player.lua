@@ -8,6 +8,7 @@ local direction = {
 	right = 2,
 	left = 3
 }
+BODY_TRIM = 3
 
 function Player:init(x, y, color)
 	-- TODO: not default to direction right since many players willl start different places
@@ -17,7 +18,7 @@ function Player:init(x, y, color)
 	self.w = GRID_SIZE
 	self.h = GRID_SIZE
 
-	self.speed = 40
+	self.speed = 5
 	self.color = color
     self.score = 0
 	
@@ -27,6 +28,7 @@ function Player:init(x, y, color)
 
 	-- -- for the many parts of the snake, start with 3 units
 	self.body = {}
+	table.insert(self.body, {x=self.x, y=self.y})
 	for i=1, self.score+3, 1 do
 		print("Putting snake" .. i .. " at position x" .. self.x .. " y" .. self.y)
 		table.insert(self.body, {x=self.x- (GRID_SIZE * i), y=self.y })
@@ -36,13 +38,19 @@ end
 function Player:draw()
     love.graphics.setColor(self.color) 
 	love.graphics.rectangle("fill", self.x, self.y, self.w, self.h)
-	love.graphics.setColor({140,255,10}) 
-	for _, o in ipairs(self.body) do
-		love.graphics.rectangle("fill", o.x, o.y, GRID_SIZE, GRID_SIZE)
+	for i, o in ipairs(self.body) do
+		if i ~= 1 then
+			love.graphics.setColor({255, 140,10}) 
+			love.graphics.rectangle("fill", o.x+BODY_TRIM, o.y+BODY_TRIM, GRID_SIZE-(BODY_TRIM*2), GRID_SIZE-(BODY_TRIM*2))
+			
+			love.graphics.setColor(0, 0, 255, 255)		
+			love.graphics.print(i, o.x+BODY_TRIM, o.y+BODY_TRIM)
+		end
 	end
 end
 
 function Player:update(dt)
+	oldX, oldY = self.x, self.y
 	oldPX, oldPY = self.phantom_x, self.phantom_y
 	oldModPX = oldPX % GRID_SIZE
 	oldModPY = oldPY % GRID_SIZE
@@ -74,40 +82,80 @@ function Player:update(dt)
 			self.direction = direction.down
 		end
 	end
-
+	-- flag_me tels us to move the body
+	flag_me = false
 	if self.direction == direction.up then
 		self.phantom_y = math.clamp(self.phantom_y - (self.speed * dt), GRID_SIZE, height)
 		modPY = self.phantom_y % GRID_SIZE
 		if oldModPY < modPY then
 			self.y = self.phantom_y - modPY
+			flag_me = true
 		end
 	elseif self.direction == direction.down then 
 	    self.phantom_y = math.clamp(self.phantom_y + (self.speed * dt), GRID_SIZE, height - GRID_SIZE*2)
 		modPY = self.phantom_y % GRID_SIZE
 		if oldModPY > modPY then 
 			self.y = self.phantom_y - modPY
+			flag_me = true
 		end
 	elseif self.direction == direction.right then 
 		self.phantom_x = math.clamp(self.phantom_x + (self.speed * dt), GRID_SIZE, width - GRID_SIZE*2)
 		modPX = self.phantom_x % GRID_SIZE
 		if oldModPX > modPX then 
 			self.x = self.phantom_x - modPX
+			flag_me = true
 		end
 	elseif self.direction == direction.left then
 	    self.phantom_x = math.clamp(self.phantom_x - (self.speed * dt), GRID_SIZE, width)
 		modPX = self.phantom_x % GRID_SIZE
 		if oldModPX < modPX then 
 			self.x = self.phantom_x - modPX
+			flag_me = true
 		end
 	end
+	if flag_me == true then
+		self.body[1].x = oldX
+		self.body[1].y = oldY
+		-- print("player..         .. x:[", self.x, "]", ".. y:[", self.y, "]")
+		-- print("OLD player..     .. x:[", oldX, "]", ".. y:[", oldY, "]")
+		-- print("body 1 state..      x:[", self.body[1].x, "]", ".. y:[", self.body[1].y, "]")
+
+		for i=table.getn(self.body), 2, -1 do 
+			-- print("BEFORE body ", i ," state..      x:[", self.body[i].x, "]", ".. y:[", self.body[i].y, "]")
+
+			self.body[i].x = self.body[i-1].x
+			self.body[i].y = self.body[i-1].y
+			-- print("AFTER body ", i ," state..      x:[", self.body[i].x, "]", ".. y:[", self.body[i].y, "]")
+
+		end
+	end
+
 	if CheckCollisionBox(self, objects.entities.treat) then
 		self.score = self.score + 1
 		objects.entities.treat.x, objects.entities.treat.y = randPos()
+		-- self:newBodyPart(self.direction)
 	end
-	-- print("player..         .. x:[", self.x, "]", ".. y:[", self.y, "]")
+
 	-- print("phantom player  .. px:[", self.phantom_x, "]", ".. py:[", self.phantom_y, "]", " modX: ", modX)
 
 
+end
+
+function Player:newBodyPart(add_direction)
+	-- TODO: collistion on walls when adding new parts
+	table_length = table.getn(self.body)
+
+	if add_direction == direction.up then
+		new_body = {x=self.body[table_length].x, y=self.body[table_length].y - GRID_SIZE}
+	elseif add_direction == direction.down then
+		new_body = {x=self.body[table_length].x, y=self.body[table_length].y + GRID_SIZE}
+	elseif add_direction == direction.right then
+		new_body = {x=self.body[table_length].x + GRID_SIZE, y=self.body[table_length].y}
+	elseif add_direction == direction.left then
+		new_body = {x=self.body[table_length].x - GRID_SIZE, y=self.body[table_length].y}
+	end
+
+	table.insert(self.body, new_body)
 end
 
 function math.clamp(x, min, max)
