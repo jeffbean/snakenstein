@@ -122,7 +122,7 @@ function Player:update(dt)
 	end
 	if self:CheckCollision(table.slice(self.body, 2)) then
 		print("SNAKE COLLIDE")
-		
+
 	end
 	-- need to do the final update to the body movement last becasue we move all the values around here
 	--   we still need them to be in place for any addition calculations and such
@@ -205,10 +205,10 @@ end
 function Player:CheckCollision(entities)
 	for _,o in ipairs(entities) do
 		if CheckCollisionBox(self, o) then
-			print(self.name)
-			for k,v in pairs(o) do
-				print(k,v)
-			end
+			-- print(self.name)
+			-- for k,v in pairs(o) do
+			-- 	print(k,v)
+			-- end
 			return true
 		end
 	end
