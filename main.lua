@@ -19,7 +19,7 @@ function love.load()
 	objects.entities.walls = {}
 	objects.entities.treat = Treat(60, 60 , GRID_SIZE, GRID_SIZE,{200,255,200} )
 
-	table.insert(objects.entities.players, Player(GRID_SIZE, GRID_SIZE, {100,255,100}))
+	table.insert(objects.entities.players, Player(GRID_SIZE*4, GRID_SIZE, {100,255,100}))
 	
 	wallPoints = {}
 	table.insert(wallPoints, {0, 0, GRID_SIZE, height*2})-- left
@@ -63,3 +63,4 @@ function love.draw()
 	-- love.graphics.print("Score: " .. objects.entities.players[0].score, GRID_SIZE, 20)
 	love.graphics.print("FPS: " .. love.timer.getFPS(), GRID_SIZE, 2)
 end
+
